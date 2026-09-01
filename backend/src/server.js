@@ -8,7 +8,7 @@ const app = express()
 
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS.split(','),
+    origin: process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim().replace(/\/$/, '')),
   })
 )
 app.use(express.json())

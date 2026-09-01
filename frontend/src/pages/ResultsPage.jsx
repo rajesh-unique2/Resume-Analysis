@@ -1,68 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getHistory } from '../services/api';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ScoreBadge from '../components/ScoreBadge';
-import { Clock, Calendar, FileText, RefreshCw, AlertCircle } from 'lucide-react';
+import SkillTag from '../components/SkillTag';
+import { ArrowLeft, AlertCircle, Briefcase } from 'lucide-react';
 
-export default function HistoryPage({ isDark }) {
+export default function ResultsPage({ isDark }) {
   const navigate = useNavigate();
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const location = useLocation();
 
-  const loadHistory = async (ignore) => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await getHistory();
-      if (ignore?.current) return; // a newer/older call already won, ignore this one
-      setHistory(data || []);
-    } catch (err) {
-      if (ignore?.current) return;
-      setError('Failed to load history');
-    } finally {
-      if (!ignore?.current) setLoading(false);
-    }
-  };
+  // Get results from navigation state
+  const { results, fileName } = location.state || {};
 
-  useEffect(() => {
-    const ignore = { current: false };
-    loadHistory(ignore);
-    return () => {
-      ignore.current = true; // cancels this call if the effect re-runs (StrictMode) or component unmounts
-    };
-  }, []);
-
-  if (loading) {
+  // Handle case where user navigates directly to /results without state
+  if (!results || !Array.isArray(results.results)) {
     return (
-      <div className="max-w-5xl mx-auto animate-pulse">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <div className={`h-8 w-48 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-            <div className={`h-4 w-64 rounded-lg mt-1 ${isDark ? 'bg-slate-700/50' : 'bg-slate-100'}`}></div>
-          </div>
-          <div className={`h-10 w-24 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-        </div>
-
-        <div className={`rounded-2xl shadow-xl border overflow-hidden ${isDark ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white border-slate-200'}`}>
-          <div className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div className="grid grid-cols-4 gap-4 p-4">
-              <div className={`h-4 w-16 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-              <div className={`h-4 w-24 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-              <div className={`h-4 w-12 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-              <div className={`h-4 w-16 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-            </div>
-          </div>
-          <div className="divide-y divide-slate-200 dark:divide-slate-700">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="grid grid-cols-4 gap-4 p-4">
-                <div className={`h-4 w-32 rounded ${isDark ? 'bg-slate-700/50' : 'bg-slate-100'}`}></div>
-                <div className={`h-4 w-48 rounded ${isDark ? 'bg-slate-700/50' : 'bg-slate-100'}`}></div>
-                <div className={`h-6 w-12 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-                <div className={`h-4 w-24 rounded ${isDark ? 'bg-slate-700/50' : 'bg-slate-100'}`}></div>
-              </div>
-            ))}
-          </div>
+      <div className="max-w-4xl mx-auto">
+        <div className={`rounded-2xl shadow-xl border p-8 text-center transition-all duration-300 ${
+          isDark 
+            ? 'bg-slate-800/80 border-slate-700/50' 
+            : 'bg-white border-indigo-100/50'
+        }`}>
+          <AlertCircle className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+          <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
+            isDark ? 'text-white' : 'text-slate-700'
+          }`}>No Results</h3>
+          <p className={`mb-6 transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Please upload a resume and job description to see analysis results
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/30 transition-all duration-300"
+          >
+            Back to Upload
+          </button>
         </div>
       </div>
     );
@@ -70,151 +39,165 @@ export default function HistoryPage({ isDark }) {
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-slide-up">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className={`text-3xl font-display font-bold transition-colors duration-300 ${
-            isDark ? 'text-white' : 'text-slate-900'
-          }`}>Analysis History</h1>
-          <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            View all your past resume analyses
-          </p>
-        </div>
-        <button
-          onClick={loadHistory}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-            isDark 
-              ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30' 
-              : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-          }`}
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/')}
+        className={`flex items-center gap-2 mb-8 px-4 py-2 rounded-lg transition-all duration-300 ${
+          isDark 
+            ? 'text-indigo-400 hover:bg-slate-700/50' 
+            : 'text-indigo-600 hover:bg-indigo-50'
+        }`}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Upload
+      </button>
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className={`text-3xl font-display font-bold mb-2 transition-colors duration-300 ${
+          isDark ? 'text-white' : 'text-slate-900'
+        }`}>Analysis Results</h1>
+        <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          Resume: <span className="font-semibold">{fileName}</span>
+        </p>
       </div>
 
-      {error && (
-        <div className={`border rounded-xl p-4 text-sm flex items-start gap-2 mb-6 ${
-          isDark ? 'bg-rose-900/20 border-rose-800 text-rose-400' : 'bg-rose-50 border-rose-200 text-rose-700'
-        }`}>
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {history.length === 0 ? (
-        <div className={`rounded-2xl shadow-xl border p-12 text-center transition-all duration-300 ${
-          isDark 
-            ? 'bg-slate-800/80 border-slate-700/50' 
-            : 'bg-white border-indigo-100/50'
-        }`}>
-          <Clock className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-          <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
-            isDark ? 'text-white' : 'text-slate-700'
-          }`}>No History Yet</h3>
-          <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Your past analyses will appear here
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-4 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/30 transition-all duration-300"
-          >
-            Analyze Now
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Desktop Table */}
-          <div className={`hidden sm:block rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
-            isDark 
-              ? 'bg-slate-800/80 border-slate-700/50' 
-              : 'bg-white border-indigo-100/50'
-          }`}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={`border-b transition-colors duration-300 ${
-                  isDark ? 'bg-slate-700/50 border-slate-700' : 'bg-slate-50 border-slate-200'
-                }`}>
-                  <tr>
-                    <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    }`}>File</th>
-                    <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    }`}>Job Description</th>
-                    <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    }`}>Score</th>
-                    <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    }`}>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((item, index) => (
-                    <tr key={index} className={`border-b transition-colors duration-300 ${
-                      isDark 
-                        ? 'border-slate-700/50 hover:bg-slate-700/30' 
-                        : 'border-slate-100 hover:bg-slate-50'
-                    }`}>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <FileText className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                          <span className={`text-sm truncate max-w-[150px] transition-colors duration-300 ${
-                            isDark ? 'text-slate-300' : 'text-slate-700'
-                          }`}>{item.fileName}</span>
-                        </div>
-                      </td>
-                      <td className={`px-6 py-4 text-sm truncate max-w-[200px] transition-colors duration-300 ${
-                        isDark ? 'text-slate-300' : 'text-slate-600'
+      {/* Results Grid */}
+      <div className="space-y-6">
+        {results.results.map((result, index) => {
+          // Handle error results
+          if (result.error) {
+            return (
+              <div 
+                key={index}
+                className={`rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-slate-800/80 border-slate-700/50' 
+                    : 'bg-white border-indigo-100/50'
+                }`}
+              >
+                <div className={`border-b p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
+                        isDark ? 'text-white' : 'text-slate-900'
                       }`}>
-                        {item.jobDescription}
-                      </td>
-                      <td className="px-6 py-4">
-                        <ScoreBadge score={item.score} isDark={isDark} />
-                      </td>
-                      <td className={`px-6 py-4 text-sm transition-colors duration-300 ${
-                        isDark ? 'text-slate-400' : 'text-slate-500'
+                        {result.jobDescription?.substring(0, 100)}...
+                      </h2>
+                      <p className={`text-sm transition-colors duration-300 ${
+                        isDark ? 'text-rose-400' : 'text-rose-600'
                       }`}>
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        ❌ {result.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
 
-          {/* Mobile Cards */}
-          <div className="sm:hidden space-y-4">
-            {history.map((item, index) => (
-              <div key={index} className={`rounded-xl shadow-lg border p-4 transition-all duration-300 ${
+          // Handle successful results
+          return (
+            <div 
+              key={index}
+              className={`rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
                 isDark 
                   ? 'bg-slate-800/80 border-slate-700/50' 
                   : 'bg-white border-indigo-100/50'
-              }`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                    <span className={`text-sm font-medium truncate transition-colors duration-300 ${
-                      isDark ? 'text-white' : 'text-slate-700'
-                    }`}>{item.fileName}</span>
+              }`}
+            >
+              {/* Job Description Header */}
+              <div className={`border-b p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Briefcase className="w-4 h-4 flex-shrink-0 text-indigo-600" />
+                      <h2 className={`text-lg font-semibold transition-colors duration-300 ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}>
+                        Job Match Analysis
+                      </h2>
+                    </div>
+                    <p className={`text-sm line-clamp-2 transition-colors duration-300 ${
+                      isDark ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      {result.jobDescription}
+                    </p>
                   </div>
-                  <ScoreBadge score={item.score} isDark={isDark} />
-                </div>
-                <p className={`text-sm mb-2 line-clamp-2 transition-colors duration-300 ${
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                }`}>{item.jobDescription}</p>
-                <div className={`flex items-center gap-1 text-xs transition-colors duration-300 ${
-                  isDark ? 'text-slate-500' : 'text-slate-400'
-                }`}>
-                  <Calendar className="w-3 h-3" />
-                  {new Date(item.createdAt).toLocaleDateString()}
+                  <div className="flex-shrink-0">
+                    <ScoreBadge score={result.score} isDark={isDark} />
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+
+              {/* Content */}
+              <div className="p-6">
+                {/* Feedback Section */}
+                {result.feedback && (
+                  <div className="mb-6">
+                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
+                      isDark ? 'text-slate-300' : 'text-slate-700'
+                    }`}>📋 Feedback</h3>
+                    <p className={`text-sm leading-relaxed transition-colors duration-300 ${
+                      isDark ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      {result.feedback}
+                    </p>
+                  </div>
+                )}
+
+                {/* Matched Skills */}
+                {result.matchedSkills && result.matchedSkills.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
+                      isDark ? 'text-slate-300' : 'text-slate-700'
+                    }`}>✅ Matched Skills ({result.matchedSkills.length})</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {result.matchedSkills.map((skill, i) => (
+                        <SkillTag key={i} skill={skill} type="matched" isDark={isDark} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Skills */}
+                {result.missingSkills && result.missingSkills.length > 0 && (
+                  <div>
+                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
+                      isDark ? 'text-slate-300' : 'text-slate-700'
+                    }`}>⚠️ Missing Skills ({result.missingSkills.length})</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {result.missingSkills.map((skill, i) => (
+                        <SkillTag key={i} skill={skill} type="missing" isDark={isDark} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button
+          onClick={() => navigate('/')}
+          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+            isDark
+              ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
+              : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+          }`}
+        >
+          Analyze Another Resume
+        </button>
+        <button
+          onClick={() => navigate('/ats')}
+          className="px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/30 transition-all duration-300"
+        >
+          Check ATS Compatibility
+        </button>
+      </div>
     </div>
   );
 }
