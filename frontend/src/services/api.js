@@ -8,7 +8,7 @@ const api = axios.create({
 });
 
 export const analyzeResume = async (formData) => {
-  try {
+  try { 
     // Get all job descriptions from formData
     const jobDescriptions = formData.getAll('jobDescription');
     const resumeFile = formData.get('resume');
