@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://resume-analysis-backend-urtj.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -69,5 +69,15 @@ export const getHistory = async () => {
   } catch (error) {
     console.error('History Error:', error.response?.data || error.message);
     throw new Error('Failed to load history');
+  }
+};
+
+export const deleteHistoryItem = async (id) => {
+  try {
+    const response = await api.delete(`/api/history/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete History Error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Failed to delete history item.');
   }
 };

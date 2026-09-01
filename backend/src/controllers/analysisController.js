@@ -100,3 +100,22 @@ export async function getAnalysisById(req, res) {
     res.status(500).json({ message: 'Could not load this analysis.' })
   }
 }
+
+/**
+ * DELETE /api/history/:id
+ */
+export async function deleteHistory(req, res) {
+  try {
+    const record = await Analysis.findByIdAndDelete(req.params.id)
+    if (!record) {
+      return res.status(404).json({ message: 'Analysis not found.' })
+    }
+    res.json({ message: 'Deleted successfully', id: req.params.id })
+  } catch (err) {
+    console.error('Delete history error:', err)
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid analysis id.' })
+    }
+    res.status(500).json({ message: 'Could not delete this analysis.' })
+  }
+}

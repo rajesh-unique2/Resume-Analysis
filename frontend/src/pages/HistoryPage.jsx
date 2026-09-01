@@ -1,31 +1,54 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getHistory } from '../services/api';
+import { getHistory, deleteHistoryItem } from '../services/api';
 import ScoreBadge from '../components/ScoreBadge';
-import { Clock, Calendar, FileText, RefreshCw, AlertCircle } from 'lucide-react';
+import { Clock, Calendar, FileText, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 
 export default function HistoryPage({ isDark }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
-  const loadHistory = async () => {
+  const loadHistory = async (ignore) => {
     setLoading(true);
     setError('');
     try {
       const data = await getHistory();
+      if (ignore?.current) return; // a newer/older call already won, ignore this one
       setHistory(data || []);
     } catch (err) {
+      if (ignore?.current) return;
       setError('Failed to load history');
     } finally {
-      setLoading(false);
+      if (!ignore?.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadHistory();
+    const ignore = { current: false };
+    loadHistory(ignore);
+    return () => {
+      ignore.current = true; // cancels this call if the effect re-runs (StrictMode) or component unmounts
+    };
   }, []);
+
+  const handleDelete = async (id) => {
+    if (!id) return;
+    const confirmed = window.confirm('Delete this analysis? This cannot be undone.');
+    if (!confirmed) return;
+
+    setDeletingId(id);
+    try {
+      await deleteHistoryItem(id);
+      setHistory((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      setError('Failed to delete history item');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -141,6 +164,11 @@ export default function HistoryPage({ isDark }) {
                     <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
                       isDark ? 'text-slate-300' : 'text-slate-600'
                     }`}>Date</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold transition-colors duration-300 ${
+                      isDark ? 'text-slate-300' : 'text-slate-600'
+                    }`}>
+                      <span className="sr-only">Delete</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,6 +199,20 @@ export default function HistoryPage({ isDark }) {
                       }`}>
                         {new Date(item.createdAt).toLocaleDateString()}
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          disabled={deletingId === item._id}
+                          aria-label="Delete this analysis"
+                          className={`p-2 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isDark
+                              ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-900/20'
+                              : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                          }`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -198,11 +240,25 @@ export default function HistoryPage({ isDark }) {
                 <p className={`text-sm mb-2 line-clamp-2 transition-colors duration-300 ${
                   isDark ? 'text-slate-300' : 'text-slate-600'
                 }`}>{item.jobDescription}</p>
-                <div className={`flex items-center gap-1 text-xs transition-colors duration-300 ${
-                  isDark ? 'text-slate-500' : 'text-slate-400'
-                }`}>
-                  <Calendar className="w-3 h-3" />
-                  {new Date(item.createdAt).toLocaleDateString()}
+                <div className="flex items-center justify-between">
+                  <div className={`flex items-center gap-1 text-xs transition-colors duration-300 ${
+                    isDark ? 'text-slate-500' : 'text-slate-400'
+                  }`}>
+                    <Calendar className="w-3 h-3" />
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </div>
+                  <button
+                    onClick={() => handleDelete(item._id)}
+                    disabled={deletingId === item._id}
+                    aria-label="Delete this analysis"
+                    className={`p-2 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      isDark
+                        ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-900/20'
+                        : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                    }`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
