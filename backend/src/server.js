@@ -3,7 +3,6 @@ import express from 'express'
 import cors from 'cors'
 import { connectDB } from './config/db.js'
 import analysisRoutes from './routes/analysisRoutes.js'
-import { all } from 'axios'
 
 const app = express()
 
