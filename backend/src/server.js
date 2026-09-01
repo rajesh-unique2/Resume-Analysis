@@ -3,12 +3,13 @@ import express from 'express'
 import cors from 'cors'
 import { connectDB } from './config/db.js'
 import analysisRoutes from './routes/analysisRoutes.js'
+import { all } from 'axios'
 
 const app = express()
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
+    origin: process.env.ALLOWED_ORIGINS.split(','),
   })
 )
 app.use(express.json())
