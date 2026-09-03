@@ -1,6 +1,6 @@
 import { RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { scoreColor } from '../utils/scoreColor';
-import CountUpScore from './CountUpScore.jsx';
+import {CountUpScore} from './CountUpScore';
 
 export default function ScoreGauge({ score, isDark }) {
   const color = scoreColor(score);
