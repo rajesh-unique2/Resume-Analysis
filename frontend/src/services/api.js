@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000'; // Replace with your backend API base URL
+const API_BASE = 'https://resume-analysis-1-ir4g.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE,
