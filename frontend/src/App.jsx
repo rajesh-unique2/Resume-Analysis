@@ -157,22 +157,20 @@ function App() {
           </div>
         </nav>
 
-        {/* Mobile drawer overlay */}
-        {isMobileMenuOpen && (
-          <div
-            onClick={closeMobileMenu}
-            className="sm:hidden"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 40,
-            }}
-          />
-        )}
+        {/* Mobile drawer overlay - kept mounted and faded via opacity/pointer-events
+            instead of conditionally rendered, so it actually transitions in/out
+            in sync with the drawer instead of popping instantly. */}
+        <div
+          onClick={closeMobileMenu}
+          className={`sm:hidden fixed inset-0 z-40 transition-opacity duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)',
+          }}
+        />
 
         {/* Right-side mobile drawer - the ONLY place nav links live on small screens */}
         <div
@@ -199,11 +197,12 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-              {navItems.map((item) => (
+              {navItems.map((item, i) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   onClick={closeMobileMenu}
+                  className="transition-all duration-300 ease-out"
                   style={({ isActive }) => ({
                     display: 'flex',
                     alignItems: 'center',
@@ -213,9 +212,11 @@ function App() {
                     textDecoration: 'none',
                     color: isActive ? linkActiveColor : linkColor,
                     backgroundColor: isActive ? linkActiveBg : 'transparent',
-                    transition: 'all 0.3s',
                     fontSize: '16px',
                     fontWeight: isActive ? 600 : 500,
+                    opacity: isMobileMenuOpen ? 1 : 0,
+                    transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(16px)',
+                    transitionDelay: isMobileMenuOpen ? `${80 + i * 60}ms` : '0ms',
                   })}
                 >
                   <item.icon style={{ width: '20px', height: '20px' }} />

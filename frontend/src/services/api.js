@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://resume-analysis-backend-urtj.onrender.com';
+const API_BASE = 'http://localhost:5000'; // Replace with your backend API base URL
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -13,33 +13,30 @@ export const analyzeResume = async (formData) => {
     const jobDescriptions = formData.getAll('jobDescription');
     const resumeFile = formData.get('resume');
     
-    // Send each job description as a separate request
-    const results = await Promise.all(
-      jobDescriptions.map(async (jobDesc) => {
-        try {
-          const singleFormData = new FormData();
-          singleFormData.append('resume', resumeFile);
-          singleFormData.append('jobDescription', jobDesc);
-          
-          const response = await api.post('/api/analyze', singleFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-          
-          // Add the job description to the response
-          return {
-            ...response.data,
-            jobDescription: jobDesc
-          };
-        } catch (error) {
-          // Return error object for this specific job with the job description
-          return {
-            error: true,
-            message: error.response?.data?.message || 'Analysis failed for this job',
-            jobDescription: jobDesc
-          };
-        }
-      })
-    );
+    // Process jobs one at a time to avoid sending concurrent Gemini requests.
+    const results = [];
+    for (const jobDesc of jobDescriptions) {
+      try {
+        const singleFormData = new FormData();
+        singleFormData.append('resume', resumeFile);
+        singleFormData.append('jobDescription', jobDesc);
+
+        const response = await api.post('/api/analyze', singleFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        results.push({
+          ...response.data,
+          jobDescription: jobDesc
+        });
+      } catch (error) {
+        results.push({
+          error: true,
+          message: error.response?.data?.message || 'Analysis failed for this job',
+          jobDescription: jobDesc
+        });
+      }
+    }
     
     console.log('All results:', results);
     return { results };

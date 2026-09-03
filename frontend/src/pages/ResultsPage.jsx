@@ -1,28 +1,63 @@
+import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ScoreBadge from '../components/ScoreBadge';
-import SkillTag from '../components/SkillTag';
-import { ArrowLeft, AlertCircle, Briefcase } from 'lucide-react';
+import JobTabs from '../components/JobTabs';
+import JobResultDetail from '../components/JobResultDetail';
+import { ArrowLeft, AlertCircle, Layers, TrendingUp, ShieldCheck } from 'lucide-react';
+
+function SummaryStat({ icon: Icon, label, value, isDark }) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-xl p-3 sm:p-4 transition-colors duration-300 ${
+        isDark ? 'bg-slate-700/40' : 'bg-slate-50'
+      }`}
+    >
+      <div
+        className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
+          isDark ? 'bg-indigo-600/20' : 'bg-indigo-50'
+        }`}
+      >
+        <Icon className={`w-4 h-4 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} />
+      </div>
+      <div className="min-w-0">
+        <p className={`text-lg font-bold leading-tight transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          {value}
+        </p>
+        <p className={`text-xs transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function ResultsPage({ isDark }) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Get results from navigation state
   const { results, fileName } = location.state || {};
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // Handle case where user navigates directly to /results without state
-  if (!results || !Array.isArray(results.results)) {
+  const jobs = results?.results;
+
+  const stats = useMemo(() => {
+    if (!Array.isArray(jobs) || jobs.length === 0) return null;
+    const successful = jobs.filter((j) => !j.error);
+    const avg = successful.length
+      ? Math.round(successful.reduce((sum, j) => sum + (j.score || 0), 0) / successful.length)
+      : 0;
+    return { total: jobs.length, successCount: successful.length, avg };
+  }, [jobs]);
+
+  // Handle direct navigation to /results without state
+  if (!Array.isArray(jobs) || jobs.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className={`rounded-2xl shadow-xl border p-8 text-center transition-all duration-300 ${
-          isDark 
-            ? 'bg-slate-800/80 border-slate-700/50' 
-            : 'bg-white border-indigo-100/50'
-        }`}>
+      <div className="max-w-4xl mx-auto animate-fade-slide-up">
+        <div
+          className={`rounded-2xl shadow-xl border p-8 text-center transition-all duration-300 ${
+            isDark ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white border-indigo-100/50'
+          }`}
+        >
           <AlertCircle className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-          <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
-            isDark ? 'text-white' : 'text-slate-700'
-          }`}>No Results</h3>
+          <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${isDark ? 'text-white' : 'text-slate-700'}`}>
+            No Results
+          </h3>
           <p className={`mb-6 transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Please upload a resume and job description to see analysis results
           </p>
@@ -37,149 +72,53 @@ export default function ResultsPage({ isDark }) {
     );
   }
 
+  const activeJob = jobs[activeIndex];
+
   return (
     <div className="max-w-5xl mx-auto animate-fade-slide-up">
-      {/* Back Button */}
       <button
         onClick={() => navigate('/')}
-        className={`flex items-center gap-2 mb-8 px-4 py-2 rounded-lg transition-all duration-300 ${
-          isDark 
-            ? 'text-indigo-400 hover:bg-slate-700/50' 
-            : 'text-indigo-600 hover:bg-indigo-50'
+        className={`flex items-center gap-2 mb-6 px-4 py-2 rounded-lg transition-all duration-300 ${
+          isDark ? 'text-indigo-400 hover:bg-slate-700/50' : 'text-indigo-600 hover:bg-indigo-50'
         }`}
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Upload
       </button>
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className={`text-3xl font-display font-bold mb-2 transition-colors duration-300 ${
+      {/* Summary header */}
+      <div
+        className={`rounded-2xl shadow-xl border p-6 sm:p-8 mb-6 transition-all duration-300 ${
+          isDark ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white border-indigo-100/50'
+        }`}
+      >
+        <h1 className={`text-2xl sm:text-3xl font-display font-bold mb-1 transition-colors duration-300 ${
           isDark ? 'text-white' : 'text-slate-900'
-        }`}>Analysis Results</h1>
-        <p className={`transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        }`}>
+          Analysis Results
+        </h1>
+        <p className={`mb-5 transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           Resume: <span className="font-semibold">{fileName}</span>
         </p>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <SummaryStat icon={Layers} label="Jobs analyzed" value={stats.total} isDark={isDark} />
+          <SummaryStat icon={TrendingUp} label="Average score" value={`${stats.avg}%`} isDark={isDark} />
+          <SummaryStat icon={ShieldCheck} label="Successful" value={`${stats.successCount}/${stats.total}`} isDark={isDark} />
+        </div>
       </div>
 
-      {/* Results Grid */}
-      <div className="space-y-6">
-        {results.results.map((result, index) => {
-          // Handle error results
-          if (result.error) {
-            return (
-              <div 
-                key={index}
-                className={`rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
-                  isDark 
-                    ? 'bg-slate-800/80 border-slate-700/50' 
-                    : 'bg-white border-indigo-100/50'
-                }`}
-              >
-                <div className={`border-b p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
-                        isDark ? 'text-white' : 'text-slate-900'
-                      }`}>
-                        {result.jobDescription?.substring(0, 100)}...
-                      </h2>
-                      <p className={`text-sm transition-colors duration-300 ${
-                        isDark ? 'text-rose-400' : 'text-rose-600'
-                      }`}>
-                        ❌ {result.message}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          }
+      {/* Job tab navigation - only shown when there's more than one job */}
+      {jobs.length > 1 && (
+        <div className="mb-6">
+          <JobTabs jobs={jobs} activeIndex={activeIndex} onSelect={setActiveIndex} isDark={isDark} />
+        </div>
+      )}
 
-          // Handle successful results
-          return (
-            <div 
-              key={index}
-              className={`rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
-                isDark 
-                  ? 'bg-slate-800/80 border-slate-700/50' 
-                  : 'bg-white border-indigo-100/50'
-              }`}
-            >
-              {/* Job Description Header */}
-              <div className={`border-b p-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Briefcase className="w-4 h-4 flex-shrink-0 text-indigo-600" />
-                      <h2 className={`text-lg font-semibold transition-colors duration-300 ${
-                        isDark ? 'text-white' : 'text-slate-900'
-                      }`}>
-                        Job Match Analysis
-                      </h2>
-                    </div>
-                    <p className={`text-sm line-clamp-2 transition-colors duration-300 ${
-                      isDark ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
-                      {result.jobDescription}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <ScoreBadge score={result.score} isDark={isDark} />
-                  </div>
-                </div>
-              </div>
+      {/* key={activeIndex} forces a remount on tab switch, which restarts
+          the animate-fade-slide-up / staggered skill animations so each
+          job feels like a fresh reveal instead of an instant content swap. */}
+      <JobResultDetail key={activeIndex} result={activeJob} isDark={isDark} />
 
-              {/* Content */}
-              <div className="p-6">
-                {/* Feedback Section */}
-                {result.feedback && (
-                  <div className="mb-6">
-                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-700'
-                    }`}>📋 Feedback</h3>
-                    <p className={`text-sm leading-relaxed transition-colors duration-300 ${
-                      isDark ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
-                      {result.feedback}
-                    </p>
-                  </div>
-                )}
-
-                {/* Matched Skills */}
-                {result.matchedSkills && result.matchedSkills.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-700'
-                    }`}>✅ Matched Skills ({result.matchedSkills.length})</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {result.matchedSkills.map((skill, i) => (
-                        <SkillTag key={i} skill={skill} type="matched" isDark={isDark} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Missing Skills */}
-                {result.missingSkills && result.missingSkills.length > 0 && (
-                  <div>
-                    <h3 className={`text-sm font-semibold mb-3 transition-colors duration-300 ${
-                      isDark ? 'text-slate-300' : 'text-slate-700'
-                    }`}>⚠️ Missing Skills ({result.missingSkills.length})</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {result.missingSkills.map((skill, i) => (
-                        <SkillTag key={i} skill={skill} type="missing" isDark={isDark} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button
           onClick={() => navigate('/')}

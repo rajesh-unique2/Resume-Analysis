@@ -1,6 +1,7 @@
 import Analysis from '../models/Analysis.js'
 import { extractTextFromResume } from '../services/pdfService.js'
 import { analyzeResumeWithGemini } from '../services/geminiService.js'
+import { runWithConcurrency } from '../utils/concurrency.js'
 
 /**
  * POST /api/analyze
@@ -66,6 +67,120 @@ export async function analyzeResume(req, res) {
     res.status(500).json({
       message: 'Something went wrong while analyzing the resume. Please try again.',
     })
+  }
+}
+
+/**
+ * POST /api/analyze-batch
+ * Expects multipart/form-data: resume (PDF file),
+ * jobDescriptions (JSON-stringified array of job description strings)
+ *
+ * Extracts the resume text ONCE, then analyzes it against every job
+ * description with a small pool of concurrent Gemini calls, streaming
+ * each result back over Server-Sent Events (SSE) the moment it's
+ * ready - instead of forcing the client to wait for the whole batch,
+ * and instead of the caller looping /api/analyze once per job (which
+ * re-uploads/re-parses the PDF every time and has no concurrency
+ * control, which is what causes both the slowness and the 429
+ * failures you were seeing).
+ *
+ * Frontend usage note: EventSource can't send file uploads, so consume
+ * this with `fetch()` + a streaming reader, parsing SSE frames
+ * ("event: ...\ndata: ...\n\n") off the response body as they arrive.
+ */
+export async function analyzeResumeBatch(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No resume file uploaded.' })
+    }
+
+    let jobDescriptions
+    try {
+      jobDescriptions = JSON.parse(req.body.jobDescriptions || '[]')
+    } catch {
+      return res.status(400).json({ message: 'jobDescriptions must be a JSON array of strings.' })
+    }
+    if (!Array.isArray(jobDescriptions)) {
+      return res.status(400).json({ message: 'jobDescriptions must be a JSON array of strings.' })
+    }
+    jobDescriptions = jobDescriptions.filter((jd) => typeof jd === 'string' && jd.trim())
+    if (jobDescriptions.length === 0) {
+      return res.status(400).json({ message: 'Provide at least one non-empty job description.' })
+    }
+
+    // Extract resume text ONCE and reuse it for every job description.
+    const resumeText = await extractTextFromResume(req.file.buffer)
+    if (!resumeText.trim()) {
+      return res.status(422).json({
+        message: 'Could not extract any text from this PDF. Try a different file.',
+      })
+    }
+
+    // --- Server-Sent Events setup ---
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no', // stop reverse proxies (nginx) from buffering the stream
+    })
+    res.flushHeaders?.()
+
+    const send = (event, data) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    }
+
+    send('start', { total: jobDescriptions.length, fileName: req.file.originalname })
+
+    // Keep concurrency modest - this is what avoids tripping Gemini's
+    // rate limit when several jobs are analyzed back to back. Tune via
+    // env var if your API quota allows more.
+    const CONCURRENCY = Number(process.env.GEMINI_BATCH_CONCURRENCY || 2)
+
+    await runWithConcurrency(
+      jobDescriptions,
+      async (jobDescription) => {
+        const result = await analyzeResumeWithGemini({ resumeText, jobDescription })
+        const record = await Analysis.create({
+          fileName: req.file.originalname,
+          jobDescription,
+          resumeText,
+          score: result.score,
+          matchedSkills: result.matchedSkills,
+          missingSkills: result.missingSkills,
+          feedback: result.feedback,
+        })
+        return { id: record._id, jobDescription, ...result }
+      },
+      ({ index, status, value, error }) => {
+        if (status === 'fulfilled') {
+          // A single job is ready - push it to the client immediately.
+          send('result', { index, ...value })
+        } else {
+          console.error(`Batch analyze failed for job #${index}:`, error?.message)
+          send('error', {
+            index,
+            jobDescription: jobDescriptions[index],
+            message: 'AI analysis failed for this job (rate limited or unavailable). You can retry it individually.',
+          })
+        }
+      },
+      CONCURRENCY
+    )
+
+    send('done', {})
+    res.end()
+  } catch (err) {
+    console.error('Batch analyze error:', err)
+    if (res.headersSent) {
+      res.write(
+        `event: error\ndata: ${JSON.stringify({
+          message: 'Something went wrong during batch analysis.',
+        })}\n\n`
+      )
+      res.end()
+    } else {
+      res.status(500).json({ message: 'Something went wrong while analyzing the resume.' })
+    }
   }
 }
 
