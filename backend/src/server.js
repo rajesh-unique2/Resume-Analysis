@@ -5,14 +5,20 @@ import { connectDB } from './config/db.js'
 import analysisRoutes from './routes/analysisRoutes.js'
 
 const app = express()
-const allowedOrigins = (process.env.CORS_ORIGIN || 'https://resume-analysis-project-1-six.vercel.app')
+const allowedOrigins = `${process.env.CORS_ORIGIN || ''},https://resume-analysis-project-1-six.vercel.app`
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean)
 
 app.use(
   cors({
-    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Origin not allowed by CORS'))
+      }
+    },
   })
 )
 app.use(express.json())
