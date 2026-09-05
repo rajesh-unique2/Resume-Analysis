@@ -9,7 +9,15 @@ jobs:
         steps:
             - name: Find and Install Respository
               uses: actions/checkout@v2
-            - name: Install Dependencies
+            - name: Setup Node js
+              uses: actions/setup-node@v2
+              with:
+                node-version: '22.18.0'
+            - name: Install frontend Dependencies
+              working-directory: ./frontend
+              run: npm install
+            - name: Install backend Dependencies
+              working-directory: ./backend
               run: npm install
             - name: Run Build Command
               run: npm run build
