@@ -20,4 +20,5 @@ jobs:
               working-directory: ./backend
               run: npm install
             - name: Run Build Command
+              working-directory: ./frontend
               run: npm run build
