@@ -1,0 +1,15 @@
+name : Practice Application on GitHub Actions
+on :
+    push:
+        branches:
+            - main
+jobs:
+    building-job:
+        runs-on: windows-latest
+        steps:
+            - name: Find and Install Respository
+              uses: actions/checkout@v2
+            - name: Install Dependencies
+              run: npm install
+            - name: Run Build Command
+              run: npm run build
