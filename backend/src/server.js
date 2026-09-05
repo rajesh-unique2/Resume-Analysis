@@ -2,27 +2,23 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { connectDB } from './config/db.js'
+import authRoutes from './routes/authRoutes.js'
 import analysisRoutes from './routes/analysisRoutes.js'
 
 const app = express()
-const allowedOrigins = `${process.env.CORS_ORIGIN || ''},https://resume-analysis-project-1-six.vercel.app`
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean)
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error('Origin not allowed by CORS'))
-      }
-    },
+    origin: process.env.CORS_ORIGIN || '*',
   })
 )
 app.use(express.json())
 
+// Public - no login required
+app.use('/api/auth', authRoutes)
+
+// Protected - every route in here requires a valid token (see
+// routes/analysisRoutes.js, which applies requireAuth to the whole router)
 app.use('/api', analysisRoutes)
 
 app.get('/api/health', (req, res) => {
