@@ -1,5 +1,5 @@
-name : Practice Application on GitHub Actions
-on :
+name: Practice Application on GitHub Actions
+on:
     push:
         branches:
             - main
@@ -7,18 +7,24 @@ jobs:
     building-job:
         runs-on: windows-latest
         steps:
-            - name: Find and Install Respository
-              uses: actions/checkout@v2
-            - name: Setup Node js
-              uses: actions/setup-node@v2
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
               with:
-                node-version: '22.18.0'
-            - name: Install frontend Dependencies
+                node-version: '22'
+            - name: Install frontend dependencies
               working-directory: ./frontend
-              run: npm install
-            - name: Install backend Dependencies
+              run: npm ci
+            - name: Install backend dependencies
               working-directory: ./backend
-              run: npm install
-            - name: Run Build Command
+              run: npm ci
+            - name: Build frontend
               working-directory: ./frontend
               run: npm run build
+            - name: Test Gemini and MongoDB dependencies
+              working-directory: ./backend
+              run: npm run test:dependencies
+              env:
+                GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                MONGODB_URI: ${{ secrets.MONGODB_URI }}
