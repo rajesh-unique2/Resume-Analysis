@@ -1,5 +1,5 @@
-name: Practice Application on GitHub Actions
-on:
+name : Practice Application on GitHub Actions
+on :
     push:
         branches:
             - main
@@ -7,13 +7,13 @@ jobs:
     building-job:
         runs-on: windows-latest
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
+            - name: Find and Install Respository
+              uses: actions/checkout@v2
+            - name: Setup Node js
+              uses: actions/setup-node@v2
               with:
-                node-version: '22'
-            - name: Install frontend dependencies
+                node-version: '22.18.0'
+            - name: Install frontend Dependencies
               working-directory: ./frontend
               run: npm ci
             - name: Install backend dependencies
