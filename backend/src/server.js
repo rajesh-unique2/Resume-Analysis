@@ -14,16 +14,16 @@ app.use(
 )
 app.use(express.json())
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' })
+})
+
 // Public - no login required
 app.use('/api/auth', authRoutes)
 
 // Protected - every route in here requires a valid token (see
 // routes/analysisRoutes.js, which applies requireAuth to the whole router)
 app.use('/api', analysisRoutes)
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' })
-})
 
 app.use((err, req, res, next) => {
   console.error(err)
