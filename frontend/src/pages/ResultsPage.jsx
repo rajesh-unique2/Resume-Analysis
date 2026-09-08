@@ -34,7 +34,7 @@ export default function ResultsPage({ isDark }) {
   const { results, fileName } = location.state || {};
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const jobs = results?.results;
+  const jobs = Array.isArray(results) ? results : results?.results;
 
   const stats = useMemo(() => {
     if (!Array.isArray(jobs) || jobs.length === 0) return null;
