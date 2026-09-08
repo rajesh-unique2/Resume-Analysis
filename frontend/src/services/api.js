@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'https://resume-analysis-1-ir4g.onrender.com'; // Replace with your backend API base URL
+export const API_BASE = import.meta.env.VITE_API_URL || 'https://resume-analysis-1-ir4g.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE,

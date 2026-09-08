@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Loader3D from '../components/Loader3D';
+import { API_BASE } from '../services/api';
 
 import {
   Upload,
@@ -72,9 +73,12 @@ export default function UploadPage({ isDark }) {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/analyze-batch`,
+        `${API_BASE}/api/analyze-batch`,
         {
           method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+          },
           body: formData,
         }
       );
