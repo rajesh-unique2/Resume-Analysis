@@ -46,6 +46,7 @@ export async function analyzeResume(req, res) {
 
     // 3. Save the result to MongoDB
     const record = await Analysis.create({
+      userId: req.userId,
       fileName: req.file.originalname,
       jobDescription,
       resumeText,
@@ -141,6 +142,7 @@ export async function analyzeResumeBatch(req, res) {
       async (jobDescription) => {
         const result = await analyzeResumeWithGemini({ resumeText, jobDescription })
         const record = await Analysis.create({
+          userId: req.userId,
           fileName: req.file.originalname,
           jobDescription,
           resumeText,
@@ -189,7 +191,7 @@ export async function analyzeResumeBatch(req, res) {
  */
 export async function getHistory(req, res) {
   try {
-    const records = await Analysis.find()
+    const records = await Analysis.find({ userId: req.userId })
       .select('fileName jobDescription score createdAt')
       .sort({ createdAt: -1 })
       .limit(50)
@@ -205,7 +207,7 @@ export async function getHistory(req, res) {
  */
 export async function getAnalysisById(req, res) {
   try {
-    const record = await Analysis.findById(req.params.id)
+    const record = await Analysis.findOne({ _id: req.params.id, userId: req.userId })
     if (!record) {
       return res.status(404).json({ message: 'Analysis not found.' })
     }
@@ -221,7 +223,7 @@ export async function getAnalysisById(req, res) {
  */
 export async function deleteHistory(req, res) {
   try {
-    const record = await Analysis.findByIdAndDelete(req.params.id)
+    const record = await Analysis.findOneAndDelete({ _id: req.params.id, userId: req.userId })
     if (!record) {
       return res.status(404).json({ message: 'Analysis not found.' })
     }
