@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/authContext.jsx';
+import { useAuth } from '../context/authContext';
 import { Sparkles, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage({ isDark }) {
