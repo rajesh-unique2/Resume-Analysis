@@ -97,10 +97,10 @@ export default function ResultsPage({ isDark }) {
         }`}>
           Analysis Results
         </h1>
-        <p className={`mb-5 transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Resume: <span className="font-semibold">{fileName}</span>
+        <p className={`mb-5 break-words transition-colors duration-300 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          Resume: <span className="font-semibold break-words">{fileName}</span>
         </p>
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <SummaryStat icon={Layers} label="Jobs analyzed" value={stats.total} isDark={isDark} />
           <SummaryStat icon={TrendingUp} label="Average score" value={`${stats.avg}%`} isDark={isDark} />
           <SummaryStat icon={ShieldCheck} label="Successful" value={`${stats.successCount}/${stats.total}`} isDark={isDark} />
