@@ -10,6 +10,7 @@ import ATSCheckPage from './pages/ATSCheckPage';
 import HistoryPage from './pages/HistoryPage';
 import VoicePracticePage from './pages/VoicePracticePage';
 import ResumeBuilderPage from './pages/ResumeBuilderPage';
+import AmbientCanvas from './components/AmbientCanvas';
 import {
   BarChart3, FileSearch, FileText, History, LogOut, Menu, Mic2, PanelLeftClose,
   PanelLeftOpen, Sparkles, X,
@@ -33,6 +34,7 @@ function AppShell() {
   if (!isAuthenticated || ['/login', '/register'].includes(location.pathname)) {
     return (
       <div className="auth-layout">
+        <AmbientCanvas />
         <div className="auth-brand"><Sparkles size={18} /> ResumeAI</div>
         <Routes>
           <Route path="/login" element={<LoginPage isDark />} />
@@ -49,6 +51,7 @@ function AppShell() {
 
   return (
     <div className={`app-frame ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      <AmbientCanvas />
       {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={closeMobile} />}
       <aside className={`sidebar ${mobileOpen ? 'mobile-visible' : ''}`}>
         <div className="sidebar-top">

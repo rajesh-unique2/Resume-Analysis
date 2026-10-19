@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Download, FileText, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { deleteSavedResume, generateResumeRequest, getSavedResumes, updateSavedResume } from '../services/api';
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
+import { Document, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from 'docx';
 
 const emptyEducation = { institution: '', degree: '', field: '', year: '', achievements: '' };
 const emptyExperience = { title: '', company: '', dates: '', responsibilities: '', achievements: '' };
 const emptyProject = { title: '', technologies: '', description: '', contributions: '', link: '' };
 const initialData = {
-  personalInfo: { fullName: '', email: '', phone: '', location: '', linkedin: '', portfolio: '' },
+  personalInfo: { fullName: '', email: '', phone: '', location: '', linkedin: '', portfolio: '', profileImage: '' },
   summary: '', targetRole: '', yearsExperience: '', education: [{ ...emptyEducation }],
   technicalSkills: '', programmingLanguages: '', frameworks: '', softSkills: '', certifications: '',
   experience: [{ ...emptyExperience }], projects: [{ ...emptyProject }],
@@ -19,8 +19,17 @@ const steps = ['Personal', 'Summary', 'Education', 'Skills', 'Experience', 'Proj
 
 async function downloadDocx(data, content) {
   const text = (value) => String(value || '').trim();
+  const imageBuffer = data.personalInfo.profileImage
+    ? Uint8Array.from(atob(data.personalInfo.profileImage.split(',')[1]), (character) => character.charCodeAt(0))
+    : null;
   const children = [
-    new Paragraph({ text: text(data.personalInfo.fullName), heading: HeadingLevel.TITLE }),
+    new Paragraph({
+      children: [
+        ...(imageBuffer ? [new ImageRun({ data: imageBuffer, transformation: { width: 86, height: 86 } })] : []),
+        new TextRun({ text: text(data.personalInfo.fullName), bold: true, size: 34 }),
+      ],
+      heading: HeadingLevel.TITLE,
+    }),
     new Paragraph(text([data.targetRole, data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | '))),
   ];
   const addSection = (title, items) => {
@@ -61,6 +70,7 @@ export default function ResumeBuilderPage({ isDark }) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [imageError, setImageError] = useState('');
 
   useEffect(() => {
     getSavedResumes().then(setSaved).catch(() => {});
@@ -105,6 +115,22 @@ export default function ResumeBuilderPage({ isDark }) {
   const input = `w-full rounded-xl border px-3 py-2.5 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-700'}`;
   const field = (label, path, placeholder = '') => <label className="block"><span className={`block text-sm font-medium mb-1.5 ${heading}`}>{label}</span><input className={input} value={path.reduce((value, key) => value?.[key] ?? '', data)} onChange={(event) => update(path, event.target.value)} placeholder={placeholder} /></label>;
   const textField = (label, path, placeholder = '') => <label className="block"><span className={`block text-sm font-medium mb-1.5 ${heading}`}>{label}</span><textarea className={input} rows={3} value={path.reduce((value, key) => value?.[key] ?? '', data)} onChange={(event) => update(path, event.target.value)} placeholder={placeholder} /></label>;
+  const handleImageChange = (event) => {
+    const image = event.target.files?.[0];
+    if (!image) return;
+    if (!image.type.startsWith('image/')) {
+      setImageError('Please choose a JPG, PNG, or WEBP image.');
+      return;
+    }
+    if (image.size > 2 * 1024 * 1024) {
+      setImageError('Profile image must be smaller than 2MB.');
+      return;
+    }
+    setImageError('');
+    const reader = new FileReader();
+    reader.onload = () => update(['personalInfo', 'profileImage'], reader.result);
+    reader.readAsDataURL(image);
+  };
 
   return (
     <div className="max-w-7xl mx-auto animate-fade-slide-up">
@@ -113,7 +139,7 @@ export default function ResumeBuilderPage({ isDark }) {
         <div className="flex items-start gap-4 mb-6"><div className="p-3 rounded-xl bg-purple-100 text-purple-600"><FileText className="w-6 h-6" /></div><div><h1 className={`text-2xl sm:text-3xl font-display font-bold ${heading}`}>Create My Resume</h1><p className={muted}>Build an editable, ATS-friendly resume without invented qualifications.</p></div></div>
         <div className="grid sm:grid-cols-7 gap-2 mb-8">{steps.map((label, index) => <button type="button" key={label} onClick={() => setStep(index)} className={`rounded-lg px-2 py-2 text-xs font-semibold ${index === step ? 'bg-indigo-600 text-white' : `${muted} bg-slate-100 dark:bg-slate-900`}`}>{index + 1}. {label}</button>)}</div>
         <form onSubmit={generate}>
-          {step === 0 && <div className="grid sm:grid-cols-2 gap-4">{field('Full name *', ['personalInfo', 'fullName'], 'Alex Morgan')}{field('Professional email', ['personalInfo', 'email'], 'alex@example.com')}{field('Phone', ['personalInfo', 'phone'])}{field('City and location', ['personalInfo', 'location'])}{field('LinkedIn URL', ['personalInfo', 'linkedin'])}{field('GitHub or portfolio URL', ['personalInfo', 'portfolio'])}</div>}
+          {step === 0 && <div className="grid sm:grid-cols-2 gap-4"><div className="sm:col-span-2 flex flex-wrap items-center gap-4 rounded-xl border border-dashed p-4"><div className="profile-image-picker">{data.personalInfo.profileImage ? <img src={data.personalInfo.profileImage} alt="Profile preview" /> : <FileText className="w-6 h-6" />}</div><div className="flex-1 min-w-[180px]"><label className={`block text-sm font-medium mb-1.5 ${heading}`}>Profile image <span className={muted}>(optional)</span></label><input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleImageChange} className={input} /><p className={`text-xs mt-1 ${muted}`}>Use a clear square image, up to 2MB. It will appear in the preview and DOCX export.</p>{imageError && <p className="text-xs text-rose-400 mt-1">{imageError}</p>}</div>{data.personalInfo.profileImage && <button type="button" onClick={() => update(['personalInfo', 'profileImage'], '')} className="text-sm text-rose-400">Remove</button>}</div>{field('Full name *', ['personalInfo', 'fullName'], 'Alex Morgan')}{field('Professional email', ['personalInfo', 'email'], 'alex@example.com')}{field('Phone', ['personalInfo', 'phone'])}{field('City and location', ['personalInfo', 'location'])}{field('LinkedIn URL', ['personalInfo', 'linkedin'])}{field('GitHub or portfolio URL', ['personalInfo', 'portfolio'])}</div>}
           {step === 1 && <div className="grid sm:grid-cols-2 gap-4">{field('Target job role', ['targetRole'], 'Frontend Developer')}{field('Years of experience', ['yearsExperience'], '0')}{textField('Career objective or professional summary', ['summary'], 'What kind of work do you want to do?')}</div>}
           {step === 2 && <ArrayEditor title="Education" section="education" items={data.education} empty={emptyEducation} update={updateArray} add={addItem} remove={removeItem} input={input} heading={heading} muted={muted} fields={['institution', 'degree', 'field', 'year', 'achievements']} />}
           {step === 3 && <div className="grid sm:grid-cols-2 gap-4">{textField('Technical skills', ['technicalSkills'], 'Databases, cloud, testing')}{textField('Programming languages', ['programmingLanguages'], 'JavaScript, Python')}{textField('Frameworks and tools', ['frameworks'], 'React, Node.js, Git')}{textField('Soft skills', ['softSkills'], 'Communication, teamwork')}{textField('Certifications', ['certifications'], 'Certification name and issuer')}</div>}
@@ -136,6 +162,6 @@ function ArrayEditor({ title, section, items, empty, update, add, remove, input,
 
 function ResumePreview({ content, setContent, data, template, setTemplate, saveEdits, loading, isDark, panel, heading, muted }) {
   const update = (field, value) => setContent((current) => ({ ...current, [field]: value }));
-  return <div id="resume-preview" className={`mt-6 rounded-2xl shadow-xl border p-6 sm:p-8 ${panel}`}><div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden"><h2 className={`text-xl font-bold ${heading}`}>Editable preview</h2><div className="flex flex-wrap gap-2"><select value={template} onChange={(event) => setTemplate(event.target.value)} className="rounded-lg border px-3 py-2"><option value="classic">Classic ATS-Friendly</option><option value="modern">Modern Professional</option><option value="minimal">Minimalist Fresher</option></select><button onClick={saveEdits} disabled={loading} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm"><Save className="w-4 h-4" /> Save edits</button><button onClick={() => window.print()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"><Download className="w-4 h-4" /> Download PDF</button><button onClick={() => downloadDocx(data, content)} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-600 text-white text-sm"><Download className="w-4 h-4" /> Download DOCX</button></div></div><article className={`resume-paper ${template} max-w-3xl mx-auto p-6 sm:p-10 ${isDark ? 'bg-slate-900 text-slate-200' : 'bg-white text-slate-800'}`}><h1 className="text-3xl font-bold">{data.personalInfo.fullName}</h1><p className={`text-sm ${muted}`}>{[data.targetRole, data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | ')}</p><textarea aria-label="Professional summary" className="w-full mt-5 bg-transparent border-0 p-0 resize-y" rows={3} value={content.summary || ''} onChange={(event) => update('summary', event.target.value)} /> <Section title="Skills"><input aria-label="Skills" className="w-full bg-transparent border-0 p-0" value={(content.skills || []).join(', ')} onChange={(event) => update('skills', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))} /></Section><Section title="Experience">{(content.experience || []).map((item, index) => <div key={index} className="mb-4"><input className="w-full bg-transparent border-0 p-0 font-semibold" value={`${item.title || ''}${item.company ? ` — ${item.company}` : ''}`} onChange={(event) => update('experience', content.experience.map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry))} /><p className="text-sm">{item.dates}</p><ul className="list-disc pl-5">{(item.bullets || []).map((bullet) => <li key={bullet}>{bullet}</li>)}</ul></div>)}</Section><Section title="Education">{(content.education || []).map((item) => <p key={`${item.institution}-${item.degree}`}>{[item.degree, item.field, item.institution, item.year].filter(Boolean).join(' — ')}</p>)}</Section><Section title="Projects">{(content.projects || []).map((item) => <div key={item.title}><strong>{item.title}</strong><p>{item.description}</p></div>)}</Section></article></div>;
+  return <div id="resume-preview" className={`mt-6 rounded-2xl shadow-xl border p-6 sm:p-8 ${panel}`}><div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden"><h2 className={`text-xl font-bold ${heading}`}>Editable preview</h2><div className="flex flex-wrap gap-2"><select value={template} onChange={(event) => setTemplate(event.target.value)} className="rounded-lg border px-3 py-2"><option value="classic">Classic ATS-Friendly</option><option value="modern">Modern Professional</option><option value="minimal">Minimalist Fresher</option></select><button onClick={saveEdits} disabled={loading} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm"><Save className="w-4 h-4" /> Save edits</button><button onClick={() => window.print()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"><Download className="w-4 h-4" /> Download PDF</button><button onClick={() => downloadDocx(data, content)} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-600 text-white text-sm"><Download className="w-4 h-4" /> Download DOCX</button></div></div><article className={`resume-paper ${template} max-w-3xl mx-auto p-6 sm:p-10 ${isDark ? 'bg-slate-900 text-slate-200' : 'bg-white text-slate-800'}`}><header className="resume-header"><div><h1 className="text-3xl font-bold">{data.personalInfo.fullName}</h1><p className="text-base font-medium">{data.targetRole}</p><p className={`text-sm ${muted}`}>{[data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | ')}</p></div>{data.personalInfo.profileImage && <img className="resume-profile-image" src={data.personalInfo.profileImage} alt="" />}</header><textarea aria-label="Professional summary" className="w-full mt-5 bg-transparent border-0 p-0 resize-y" rows={3} value={content.summary || ''} onChange={(event) => update('summary', event.target.value)} /> <Section title="Skills"><input aria-label="Skills" className="w-full bg-transparent border-0 p-0" value={(content.skills || []).join(', ')} onChange={(event) => update('skills', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))} /></Section><Section title="Experience">{(content.experience || []).map((item, index) => <div key={index} className="mb-4"><input className="w-full bg-transparent border-0 p-0 font-semibold" value={`${item.title || ''}${item.company ? ` — ${item.company}` : ''}`} onChange={(event) => update('experience', content.experience.map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry))} /><p className="text-sm">{item.dates}</p><ul className="list-disc pl-5">{(item.bullets || []).map((bullet) => <li key={bullet}>{bullet}</li>)}</ul></div>)}</Section><Section title="Education">{(content.education || []).map((item) => <p key={`${item.institution}-${item.degree}`}>{[item.degree, item.field, item.institution, item.year].filter(Boolean).join(' — ')}</p>)}</Section><Section title="Projects">{(content.projects || []).map((item) => <div key={item.title}><strong>{item.title}</strong><p>{item.description}</p></div>)}</Section></article></div>;
 }
 function Section({ title, children }) { return <section className="mt-5"><h2 className="border-b border-slate-300 pb-1 mb-2 text-lg font-bold">{title}</h2>{children}</section>; }
