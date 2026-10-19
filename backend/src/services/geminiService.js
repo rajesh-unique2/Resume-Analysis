@@ -169,3 +169,103 @@ for rewrittenBullets. Keep every "note" and bullet under 20 words.`
     rewrittenBullets: Array.isArray(parsed.rewrittenBullets) ? parsed.rewrittenBullets : [],
   }
 }
+
+export async function getCommunicationQuestion(answers) {
+  const transcript = answers
+    .map(({ question, answer }, index) => `${index + 1}. Q: ${question}\nA: ${answer}`)
+    .join('\n')
+  const prompt = `You are a supportive English conversation interviewer. Ask exactly one
+natural question for a learner. Use the previous answers to choose a relevant follow-up.
+Do not assess accent, nationality, or background. Keep it under 25 words.
+Previous conversation:
+${transcript || '(none; begin with a self-introduction question)'}
+Respond with ONLY valid JSON: {"question":"..."}.`
+  const result = await generateContent(prompt)
+  const parsed = parseJsonResponse(result.response.text().trim())
+  if (typeof parsed.question !== 'string' || !parsed.question.trim()) {
+    throw new Error('Gemini returned an invalid communication question.')
+  }
+  return { question: parsed.question.trim() }
+}
+
+export async function assessCommunication(answers) {
+  const transcript = answers
+    .map(({ question, answer }, index) => `${index + 1}. Question: ${question}\nAnswer: ${answer}`)
+    .join('\n')
+  const prompt = `Assess the learner's English communication using only the answers below.
+This is educational feedback, not certification. Do not judge accent, nationality,
+identity, or background. Do not invent mistakes that are not evidenced.
+Use these weighted categories: grammar 25%, vocabulary 20%, fluency 25%, clarity 20%,
+relevance 10%. Return category scores as integers from 0 to 100 and calculate
+overallScore = grammar*0.25 + vocabulary*0.20 + fluency*0.25 + clarity*0.20 + relevance*0.10,
+rounded to the nearest integer.
+Conversation:
+${transcript}
+Respond ONLY with valid JSON in exactly this shape:
+{
+ "categoryScores":{"grammar":0,"vocabulary":0,"fluency":0,"clarity":0,"relevance":0},
+ "overallScore":0,
+ "strengths":["..."],
+ "grammarCorrections":[{"original":"...","corrected":"..."}],
+ "vocabularySuggestions":["..."],
+ "recommendations":["..."],
+ "improvedAnswers":["..."]
+}
+Use empty arrays when there is no evidence. Keep feedback concise and grounded.`
+  const result = await generateContent(prompt)
+  const parsed = parseJsonResponse(result.response.text().trim())
+  const scores = parsed.categoryScores || {}
+  const clamp = (value) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)))
+  const categoryScores = {
+    grammar: clamp(scores.grammar),
+    vocabulary: clamp(scores.vocabulary),
+    fluency: clamp(scores.fluency),
+    clarity: clamp(scores.clarity),
+    relevance: clamp(scores.relevance),
+  }
+  const overallScore = clamp(
+    categoryScores.grammar * 0.25 +
+      categoryScores.vocabulary * 0.2 +
+      categoryScores.fluency * 0.25 +
+      categoryScores.clarity * 0.2 +
+      categoryScores.relevance * 0.1
+  )
+  return {
+    categoryScores,
+    overallScore,
+    strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 8) : [],
+    grammarCorrections: Array.isArray(parsed.grammarCorrections) ? parsed.grammarCorrections.slice(0, 8) : [],
+    vocabularySuggestions: Array.isArray(parsed.vocabularySuggestions) ? parsed.vocabularySuggestions.slice(0, 8) : [],
+    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.slice(0, 8) : [],
+    improvedAnswers: Array.isArray(parsed.improvedAnswers) ? parsed.improvedAnswers.slice(0, 5) : [],
+  }
+}
+
+export async function generateResumeWithGemini(inputData) {
+  const prompt = `Create an ATS-friendly editable resume from the candidate data below.
+Improve grammar and organize sections, but never invent a qualification, employer,
+title, date, certification, skill, achievement, metric, or link. Omit missing fields.
+Target role: ${String(inputData.targetRole || '').slice(0, 200)}
+Candidate data:
+${JSON.stringify(inputData).slice(0, 12000)}
+Respond ONLY with valid JSON:
+{
+ "summary":"",
+ "skills":[""],
+ "education":[{"institution":"","degree":"","field":"","year":"","achievements":""}],
+ "experience":[{"title":"","company":"","dates":"","bullets":[""]}],
+ "projects":[{"title":"","technologies":"","description":"","contributions":"","link":""}],
+ "additional":[""]
+}
+Use only supplied facts and preserve user-provided dates and names.`
+  const result = await generateContent(prompt)
+  const parsed = parseJsonResponse(result.response.text().trim())
+  return {
+    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    skills: Array.isArray(parsed.skills) ? parsed.skills : [],
+    education: Array.isArray(parsed.education) ? parsed.education : [],
+    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+    projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+    additional: Array.isArray(parsed.additional) ? parsed.additional : [],
+  }
+}

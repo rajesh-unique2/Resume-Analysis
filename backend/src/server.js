@@ -4,12 +4,29 @@ import cors from 'cors'
 import { connectDB } from './config/db.js'
 import authRoutes from './routes/authRoutes.js'
 import analysisRoutes from './routes/analysisRoutes.js'
+import communicationRoutes from './routes/communicationRoutes.js'
+import resumeRoutes from './routes/resumeRoutes.js'
 
 const app = express()
 
+const corsOrigins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: (requestOrigin, callback) => {
+      if (
+        !requestOrigin ||
+        corsOrigins.includes('*') ||
+        corsOrigins.includes(requestOrigin)
+      ) {
+        return callback(null, true)
+      }
+
+      return callback(new Error('Origin is not allowed by CORS.'))
+    },
   })
 )
 app.use(express.json())
@@ -20,6 +37,8 @@ app.get('/api/health', (req, res) => {
 
 // Public - no login required
 app.use('/api/auth', authRoutes)
+app.use('/api/communication', communicationRoutes)
+app.use('/api/resumes', resumeRoutes)
 
 // Protected - every route in here requires a valid token (see
 // routes/analysisRoutes.js, which applies requireAuth to the whole router)

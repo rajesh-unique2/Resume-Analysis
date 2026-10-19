@@ -12,6 +12,7 @@ import {
   Shield,
   Zap,
   FileText,
+  Mic,
   ArrowRight,
   AlertCircle
 } from 'lucide-react';
@@ -874,6 +875,29 @@ export default function UploadPage({ isDark }) {
 
         </form>
 
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4 mt-6">
+        <button
+          type="button"
+          onClick={() => navigate('/voice-practice')}
+          className={`text-left rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'bg-indigo-950/40 border-indigo-800/60' : 'bg-indigo-50/70 border-indigo-100'}`}
+        >
+          <Mic className="w-7 h-7 text-indigo-600 mb-3" />
+          <h2 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>English Communication Test</h2>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Practice real conversation questions and receive Gemini-powered, educational feedback.</p>
+          <span className="inline-block mt-3 text-sm font-semibold text-indigo-600">Start speaking assessment →</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/resume-builder')}
+          className={`text-left rounded-2xl border p-5 transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'bg-purple-950/40 border-purple-800/60' : 'bg-purple-50/70 border-purple-100'}`}
+        >
+          <FileText className="w-7 h-7 text-purple-600 mb-3" />
+          <h2 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Create My Resume</h2>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Turn your real experience into an editable, ATS-friendly resume with templates.</p>
+          <span className="inline-block mt-3 text-sm font-semibold text-purple-600">Build your resume →</span>
+        </button>
       </div>
 
       {/* ATS */}

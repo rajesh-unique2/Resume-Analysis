@@ -25,6 +25,13 @@ http://localhost:5000 (see the backend README).
 - **History** — past analyses saved to MongoDB, with job description and
   a color-coded score badge. Responsive: table on desktop, stacked cards
   on mobile.
+- **Voice Practice** — record an interview answer locally with the browser
+  microphone, review/edit its transcript, and receive a communication
+  score based on pace, filler words, answer length, and structure. Audio is
+  not uploaded.
+- **Create Resume** — enter contact details, skills, experience, education,
+  and projects to generate an editable ATS-friendly Markdown draft that can
+  be downloaded.
 
 ## Design
 
@@ -61,6 +68,8 @@ src/
     ResultsPage.jsx            - renders score, skills, feedback (per job)
     ATSCheckPage.jsx             - ATS check upload + results
     HistoryPage.jsx                - past analyses from MongoDB
+    VoicePracticePage.jsx          - local voice recording and communication score
+    ResumeBuilderPage.jsx          - structured resume input and Markdown export
   services/
     api.js                          - axios calls to the backend
   utils/

@@ -33,6 +33,10 @@ extraction and the **Gemini API** for both scoring and feedback.
    Runs on http://localhost:5000. Visit http://localhost:5000/api/health —
    you should see `{"status":"ok"}`.
 
+For deployed frontends, set `CORS_ORIGIN` to the exact frontend origin. Multiple
+origins may be supplied as a comma-separated value, for example:
+`https://resume-analysis.example,https://preview.example`.
+
 ## Endpoints
 
 ### `POST /api/analyze`

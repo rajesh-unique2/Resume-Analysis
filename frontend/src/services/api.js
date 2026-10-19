@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-export const API_BASE = import.meta.env.VITE_API_URL || 'https://resume-analysis-1-ir4g.onrender.com';
+// Use the local API during Vite development. Production builds continue to
+// use the deployed API unless VITE_API_URL overrides it.
+export const API_BASE = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://resume-analysis-1-ir4g.onrender.com');
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -124,4 +127,47 @@ export const deleteHistoryItem = async (id) => {
     console.error('Delete History Error:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || 'Failed to delete history item.');
   }
+};
+
+export const getCommunicationQuestion = async (answers) => {
+  const response = await api.post('/api/communication/question', { answers });
+  return response.data;
+};
+
+export const submitCommunicationAssessment = async (answers) => {
+  try {
+    const response = await api.post('/api/communication/assess', { answers });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Communication assessment failed. Please try again.');
+  }
+};
+
+export const getCommunicationHistory = async () => {
+  const response = await api.get('/api/communication/history');
+  return response.data;
+};
+
+export const generateResumeRequest = async (inputData, template) => {
+  try {
+    const response = await api.post('/api/resumes/generate', { inputData, template });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Resume generation failed. Please try again.');
+  }
+};
+
+export const getSavedResumes = async () => {
+  const response = await api.get('/api/resumes');
+  return response.data;
+};
+
+export const updateSavedResume = async (id, changes) => {
+  const response = await api.patch(`/api/resumes/${id}`, changes);
+  return response.data;
+};
+
+export const deleteSavedResume = async (id) => {
+  const response = await api.delete(`/api/resumes/${id}`);
+  return response.data;
 };
