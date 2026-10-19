@@ -32,6 +32,12 @@ http://localhost:5000 (see the backend README).
 - **Create Resume** — enter contact details, skills, experience, education,
   and projects to generate an editable ATS-friendly Markdown draft that can
   be downloaded.
+- **AI Resume Rewriting** — copy individual or all achievement-focused bullet
+  rewrites from the ATS results.
+- **Interview Practice** — generate role-specific questions from a target role
+  and job description, answer by voice or text, and receive scored feedback.
+- **Document Export** — download the editable resume as a print-ready PDF or
+  a real DOCX document.
 
 ## Design
 

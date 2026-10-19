@@ -12,6 +12,8 @@ export default function VoicePracticePage({ isDark }) {
   const recognitionRef = useRef(null);
   const startedAtRef = useRef(0);
   const [question, setQuestion] = useState('');
+  const [targetRole, setTargetRole] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const [answers, setAnswers] = useState([]);
   const [draft, setDraft] = useState('');
   const [recording, setRecording] = useState(false);
@@ -37,7 +39,7 @@ export default function VoicePracticePage({ isDark }) {
     setStarted(true);
     setQuestion(firstQuestion);
     try {
-      const response = await getCommunicationQuestion([]);
+      const response = await getCommunicationQuestion([], { targetRole, jobDescription });
       setQuestion(response.question);
     } catch (err) {
       setError(err.message || 'Could not start the AI interviewer. You can use the default question.');
@@ -105,7 +107,7 @@ export default function VoicePracticePage({ isDark }) {
     if (nextAnswers.length >= 8) return finish(nextAnswers);
     setLoading(true);
     try {
-      const response = await getCommunicationQuestion(nextAnswers);
+      const response = await getCommunicationQuestion(nextAnswers, { targetRole, jobDescription });
       setQuestion(response.question);
     } catch (err) {
       setError(err.message || 'Could not get the next question.');
@@ -128,7 +130,7 @@ export default function VoicePracticePage({ isDark }) {
     setLoading(true);
     setError('');
     try {
-      setReport(await submitCommunicationAssessment(finalAnswers));
+      setReport(await submitCommunicationAssessment(finalAnswers, { targetRole, jobDescription }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -151,7 +153,7 @@ export default function VoicePracticePage({ isDark }) {
           <div><h1 className={`text-2xl sm:text-3xl font-display font-bold ${heading}`}>English Communication Test</h1><p className={muted}>Answer 5–8 questions. We assess your words and ideas, not your accent or background.</p></div>
         </div>
         {!started ? (
-          <div className="space-y-4"><p className={muted}>Your microphone is used only while you record. Audio is not uploaded or saved; your editable transcript is sent securely to Gemini for feedback.</p><ul className={`list-disc pl-5 text-sm ${muted}`}><li>Allow microphone access when prompted.</li><li>Speak naturally and use the text fallback if needed.</li><li>You can finish early after one answer.</li></ul><button onClick={begin} className="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold">Start assessment</button></div>
+          <div className="space-y-4"><p className={muted}>Add a target role and job description for relevant interview questions. Your audio is not uploaded or saved.</p><div className="grid sm:grid-cols-2 gap-4"><label className={`block text-sm font-medium ${heading}`}>Target role<input value={targetRole} onChange={(event) => setTargetRole(event.target.value)} className={`${input} mt-2`} placeholder="Frontend Developer" /></label><label className={`block text-sm font-medium ${heading}`}>Job description <span className={muted}>(optional)</span><textarea value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} className={`${input} mt-2`} rows={3} placeholder="Paste the key responsibilities..." /></label></div><ul className={`list-disc pl-5 text-sm ${muted}`}><li>Allow microphone access when prompted.</li><li>Speak naturally and use the text fallback if needed.</li><li>You can finish early after one answer.</li></ul><button onClick={begin} className="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold">Start interview practice</button></div>
         ) : !report ? (
           <div>
             <div className="flex items-center justify-between mb-3 text-sm"><span className={muted}>Question {Math.min(answers.length + 1, 8)} of 8</span><span className={muted}>{seconds}s</span></div>

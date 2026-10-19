@@ -129,14 +129,14 @@ export const deleteHistoryItem = async (id) => {
   }
 };
 
-export const getCommunicationQuestion = async (answers) => {
-  const response = await api.post('/api/communication/question', { answers });
+export const getCommunicationQuestion = async (answers, context = {}) => {
+  const response = await api.post('/api/communication/question', { answers, context });
   return response.data;
 };
 
-export const submitCommunicationAssessment = async (answers) => {
+export const submitCommunicationAssessment = async (answers, context = {}) => {
   try {
-    const response = await api.post('/api/communication/assess', { answers });
+    const response = await api.post('/api/communication/assess', { answers, context });
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Communication assessment failed. Please try again.');

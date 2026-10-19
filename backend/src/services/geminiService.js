@@ -170,13 +170,18 @@ for rewrittenBullets. Keep every "note" and bullet under 20 words.`
   }
 }
 
-export async function getCommunicationQuestion(answers) {
+export async function getCommunicationQuestion(answers, context = {}) {
   const transcript = answers
     .map(({ question, answer }, index) => `${index + 1}. Q: ${question}\nA: ${answer}`)
     .join('\n')
+  const targetRole = typeof context.targetRole === 'string' ? context.targetRole.slice(0, 200) : ''
+  const jobDescription = typeof context.jobDescription === 'string' ? context.jobDescription.slice(0, 2500) : ''
   const prompt = `You are a supportive English conversation interviewer. Ask exactly one
-natural question for a learner. Use the previous answers to choose a relevant follow-up.
+natural interview question for a candidate. Use the target role and job description to
+make questions relevant, then use previous answers to choose a useful follow-up.
 Do not assess accent, nationality, or background. Keep it under 25 words.
+Target role: ${targetRole || '(not provided)'}
+Job description: ${jobDescription || '(not provided)'}
 Previous conversation:
 ${transcript || '(none; begin with a self-introduction question)'}
 Respond with ONLY valid JSON: {"question":"..."}.`
@@ -188,17 +193,21 @@ Respond with ONLY valid JSON: {"question":"..."}.`
   return { question: parsed.question.trim() }
 }
 
-export async function assessCommunication(answers) {
+export async function assessCommunication(answers, context = {}) {
   const transcript = answers
     .map(({ question, answer }, index) => `${index + 1}. Question: ${question}\nAnswer: ${answer}`)
     .join('\n')
+  const targetRole = typeof context.targetRole === 'string' ? context.targetRole.slice(0, 200) : ''
+  const jobDescription = typeof context.jobDescription === 'string' ? context.jobDescription.slice(0, 2500) : ''
   const prompt = `Assess the learner's English communication using only the answers below.
 This is educational feedback, not certification. Do not judge accent, nationality,
 identity, or background. Do not invent mistakes that are not evidenced.
-Use these weighted categories: grammar 25%, vocabulary 20%, fluency 25%, clarity 20%,
-relevance 10%. Return category scores as integers from 0 to 100 and calculate
-overallScore = grammar*0.25 + vocabulary*0.20 + fluency*0.25 + clarity*0.20 + relevance*0.10,
+Use these weighted categories: grammar 20%, vocabulary 15%, fluency 20%, clarity 20%,
+relevance to the target role 25%. Return category scores as integers from 0 to 100 and calculate
+overallScore = grammar*0.20 + vocabulary*0.15 + fluency*0.20 + clarity*0.20 + relevance*0.25,
 rounded to the nearest integer.
+Target role: ${targetRole || '(not provided)'}
+Job description: ${jobDescription || '(not provided)'}
 Conversation:
 ${transcript}
 Respond ONLY with valid JSON in exactly this shape:
@@ -224,11 +233,11 @@ Use empty arrays when there is no evidence. Keep feedback concise and grounded.`
     relevance: clamp(scores.relevance),
   }
   const overallScore = clamp(
-    categoryScores.grammar * 0.25 +
-      categoryScores.vocabulary * 0.2 +
-      categoryScores.fluency * 0.25 +
+    categoryScores.grammar * 0.2 +
+      categoryScores.vocabulary * 0.15 +
+      categoryScores.fluency * 0.2 +
       categoryScores.clarity * 0.2 +
-      categoryScores.relevance * 0.1
+      categoryScores.relevance * 0.25
   )
   return {
     categoryScores,

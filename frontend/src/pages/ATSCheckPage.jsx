@@ -3,7 +3,7 @@ import { checkATS } from '../services/api';
 import ATSSkeletonLoader from '../components/ATSSkeletonLoader';
 import ChecklistItem from '../components/ChecklistItem';
 import BulletRewriteCard from '../components/BulletRewriteCard';
-import { FileSearch, Shield, Zap, ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
+import { FileSearch, Shield, Zap, ArrowLeft, Sparkles, AlertCircle, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ATSCheckPage({ isDark }) {
@@ -12,6 +12,7 @@ export default function ATSCheckPage({ isDark }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [copiedAll, setCopiedAll] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -100,9 +101,9 @@ export default function ATSCheckPage({ isDark }) {
                 ? 'bg-slate-800/80 border-slate-700/50' 
                 : 'bg-white border-indigo-100/50'
             }`}>
-              <h2 className={`font-semibold mb-4 transition-colors duration-300 ${
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4"><div><h2 className={`font-semibold transition-colors duration-300 ${
                 isDark ? 'text-white' : 'text-slate-900'
-              }`}>AI-Suggested Rewrites</h2>
+              }`}>AI Resume Rewriting</h2><p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Copy these achievement-focused bullets into your resume.</p></div><button onClick={async () => { await navigator.clipboard?.writeText(result.rewrittenBullets.map((bullet) => `• ${bullet.improved || bullet.rewritten || ''}`).join('\n')); setCopiedAll(true); setTimeout(() => setCopiedAll(false), 2000); }} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-indigo-50 text-indigo-700'}`}>{copiedAll ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}{copiedAll ? 'Copied' : 'Copy all'}</button></div>
               <div className="space-y-4">
                 {result.rewrittenBullets.map((bullet, index) => (
                   <BulletRewriteCard key={index} bullet={bullet} index={index} isDark={isDark} />

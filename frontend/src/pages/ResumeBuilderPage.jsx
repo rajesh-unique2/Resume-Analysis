@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Download, FileText, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { deleteSavedResume, generateResumeRequest, getSavedResumes, updateSavedResume } from '../services/api';
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
 
 const emptyEducation = { institution: '', degree: '', field: '', year: '', achievements: '' };
 const emptyExperience = { title: '', company: '', dates: '', responsibilities: '', achievements: '' };
@@ -15,6 +16,40 @@ const initialData = {
 };
 
 const steps = ['Personal', 'Summary', 'Education', 'Skills', 'Experience', 'Projects', 'Additional'];
+
+async function downloadDocx(data, content) {
+  const text = (value) => String(value || '').trim();
+  const children = [
+    new Paragraph({ text: text(data.personalInfo.fullName), heading: HeadingLevel.TITLE }),
+    new Paragraph(text([data.targetRole, data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | '))),
+  ];
+  const addSection = (title, items) => {
+    if (!items.length) return;
+    children.push(new Paragraph({ text: title, heading: HeadingLevel.HEADING_1 }));
+    children.push(...items);
+  };
+  if (text(content.summary)) addSection('Summary', [new Paragraph(text(content.summary))]);
+  if (content.skills?.length) addSection('Skills', [new Paragraph(content.skills.join(', '))]);
+  if (content.experience?.length) {
+    addSection('Experience', content.experience.flatMap((item) => [
+      new Paragraph({ children: [new TextRun({ text: `${text(item.title)}${item.company ? ` — ${text(item.company)}` : ''}`, bold: true })] }),
+      new Paragraph(text(item.dates)),
+      ...(item.bullets || []).map((bullet) => new Paragraph({ text: text(bullet), bullet: { level: 0 } })),
+    ]));
+  }
+  if (content.education?.length) addSection('Education', content.education.map((item) => new Paragraph(text([item.degree, item.field, item.institution, item.year].filter(Boolean).join(' — ')))));
+  if (content.projects?.length) addSection('Projects', content.projects.flatMap((item) => [
+    new Paragraph({ children: [new TextRun({ text: text(item.title), bold: true })] }),
+    new Paragraph(text(item.description)),
+  ]));
+  const blob = await Packer.toBlob(new Document({ sections: [{ children }] }));
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${text(data.personalInfo.fullName) || 'resume'}.docx`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ResumeBuilderPage({ isDark }) {
   const navigate = useNavigate();
@@ -101,6 +136,6 @@ function ArrayEditor({ title, section, items, empty, update, add, remove, input,
 
 function ResumePreview({ content, setContent, data, template, setTemplate, saveEdits, loading, isDark, panel, heading, muted }) {
   const update = (field, value) => setContent((current) => ({ ...current, [field]: value }));
-  return <div id="resume-preview" className={`mt-6 rounded-2xl shadow-xl border p-6 sm:p-8 ${panel}`}><div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden"><h2 className={`text-xl font-bold ${heading}`}>Editable preview</h2><div className="flex flex-wrap gap-2"><select value={template} onChange={(event) => setTemplate(event.target.value)} className="rounded-lg border px-3 py-2"><option value="classic">Classic ATS-Friendly</option><option value="modern">Modern Professional</option><option value="minimal">Minimalist Fresher</option></select><button onClick={saveEdits} disabled={loading} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm"><Save className="w-4 h-4" /> Save edits</button><button onClick={() => window.print()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"><Download className="w-4 h-4" /> Download PDF</button></div></div><article className={`resume-paper ${template} max-w-3xl mx-auto p-6 sm:p-10 ${isDark ? 'bg-slate-900 text-slate-200' : 'bg-white text-slate-800'}`}><h1 className="text-3xl font-bold">{data.personalInfo.fullName}</h1><p className={`text-sm ${muted}`}>{[data.targetRole, data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | ')}</p><textarea aria-label="Professional summary" className="w-full mt-5 bg-transparent border-0 p-0 resize-y" rows={3} value={content.summary || ''} onChange={(event) => update('summary', event.target.value)} /> <Section title="Skills"><input aria-label="Skills" className="w-full bg-transparent border-0 p-0" value={(content.skills || []).join(', ')} onChange={(event) => update('skills', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))} /></Section><Section title="Experience">{(content.experience || []).map((item, index) => <div key={index} className="mb-4"><input className="w-full bg-transparent border-0 p-0 font-semibold" value={`${item.title || ''}${item.company ? ` — ${item.company}` : ''}`} onChange={(event) => update('experience', content.experience.map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry))} /><p className="text-sm">{item.dates}</p><ul className="list-disc pl-5">{(item.bullets || []).map((bullet) => <li key={bullet}>{bullet}</li>)}</ul></div>)}</Section><Section title="Education">{(content.education || []).map((item) => <p key={`${item.institution}-${item.degree}`}>{[item.degree, item.field, item.institution, item.year].filter(Boolean).join(' — ')}</p>)}</Section><Section title="Projects">{(content.projects || []).map((item) => <div key={item.title}><strong>{item.title}</strong><p>{item.description}</p></div>)}</Section></article></div>;
+  return <div id="resume-preview" className={`mt-6 rounded-2xl shadow-xl border p-6 sm:p-8 ${panel}`}><div className="flex flex-wrap items-center justify-between gap-3 mb-5 print:hidden"><h2 className={`text-xl font-bold ${heading}`}>Editable preview</h2><div className="flex flex-wrap gap-2"><select value={template} onChange={(event) => setTemplate(event.target.value)} className="rounded-lg border px-3 py-2"><option value="classic">Classic ATS-Friendly</option><option value="modern">Modern Professional</option><option value="minimal">Minimalist Fresher</option></select><button onClick={saveEdits} disabled={loading} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm"><Save className="w-4 h-4" /> Save edits</button><button onClick={() => window.print()} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm"><Download className="w-4 h-4" /> Download PDF</button><button onClick={() => downloadDocx(data, content)} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-600 text-white text-sm"><Download className="w-4 h-4" /> Download DOCX</button></div></div><article className={`resume-paper ${template} max-w-3xl mx-auto p-6 sm:p-10 ${isDark ? 'bg-slate-900 text-slate-200' : 'bg-white text-slate-800'}`}><h1 className="text-3xl font-bold">{data.personalInfo.fullName}</h1><p className={`text-sm ${muted}`}>{[data.targetRole, data.personalInfo.email, data.personalInfo.phone, data.personalInfo.location].filter(Boolean).join(' | ')}</p><textarea aria-label="Professional summary" className="w-full mt-5 bg-transparent border-0 p-0 resize-y" rows={3} value={content.summary || ''} onChange={(event) => update('summary', event.target.value)} /> <Section title="Skills"><input aria-label="Skills" className="w-full bg-transparent border-0 p-0" value={(content.skills || []).join(', ')} onChange={(event) => update('skills', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))} /></Section><Section title="Experience">{(content.experience || []).map((item, index) => <div key={index} className="mb-4"><input className="w-full bg-transparent border-0 p-0 font-semibold" value={`${item.title || ''}${item.company ? ` — ${item.company}` : ''}`} onChange={(event) => update('experience', content.experience.map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry))} /><p className="text-sm">{item.dates}</p><ul className="list-disc pl-5">{(item.bullets || []).map((bullet) => <li key={bullet}>{bullet}</li>)}</ul></div>)}</Section><Section title="Education">{(content.education || []).map((item) => <p key={`${item.institution}-${item.degree}`}>{[item.degree, item.field, item.institution, item.year].filter(Boolean).join(' — ')}</p>)}</Section><Section title="Projects">{(content.projects || []).map((item) => <div key={item.title}><strong>{item.title}</strong><p>{item.description}</p></div>)}</Section></article></div>;
 }
 function Section({ title, children }) { return <section className="mt-5"><h2 className="border-b border-slate-300 pb-1 mb-2 text-lg font-bold">{title}</h2>{children}</section>; }

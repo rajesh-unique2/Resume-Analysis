@@ -12,6 +12,7 @@ const app = express()
 const corsOrigins = (process.env.CORS_ORIGIN || '*')
   .split(',')
   .map((origin) => origin.trim())
+  .map((origin) => origin.replace(/\/+$/, ''))
   .filter(Boolean)
 
 app.use(

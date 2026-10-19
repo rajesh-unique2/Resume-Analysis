@@ -78,6 +78,10 @@ Last 50 analyses: `_id`, `fileName`, `jobDescription`, `score`, `createdAt`.
 ### `GET /api/history/:id`
 Full saved record for one analysis.
 
+Communication interview question and assessment requests accept an optional
+`context` object with `targetRole` and `jobDescription` for role-specific
+practice and relevance scoring.
+
 ## Structure
 
 ```

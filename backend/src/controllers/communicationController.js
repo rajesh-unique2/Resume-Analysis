@@ -14,10 +14,11 @@ function validAnswers(value) {
 export async function nextQuestion(req, res) {
   try {
     const answers = Array.isArray(req.body.answers) ? req.body.answers : []
+    const context = req.body.context && typeof req.body.context === 'object' ? req.body.context : {}
     if (answers.length > 7 || answers.some((item) => !item?.question || !item?.answer)) {
       return res.status(400).json({ message: 'Provide up to seven completed answers.' })
     }
-    res.json(await getCommunicationQuestion(answers))
+    res.json(await getCommunicationQuestion(answers, context))
   } catch (error) {
     console.error('Communication question error:', error.message)
     res.status(503).json({ message: 'The communication interviewer is temporarily unavailable.' })
@@ -29,7 +30,8 @@ export async function submitAssessment(req, res) {
     if (!validAnswers(req.body.answers)) {
       return res.status(400).json({ message: 'Submit between one and eight non-empty answers.' })
     }
-    const report = await assessCommunication(req.body.answers)
+    const context = req.body.context && typeof req.body.context === 'object' ? req.body.context : {}
+    const report = await assessCommunication(req.body.answers, context)
     const record = await CommunicationAssessment.create({ userId: req.userId, answers: req.body.answers, ...report })
     res.status(201).json({ id: record._id, ...report, answers: record.answers })
   } catch (error) {
