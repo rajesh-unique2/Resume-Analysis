@@ -38,6 +38,10 @@ http://localhost:5000 (see the backend README).
   and job description, answer by voice or text, and receive scored feedback.
 - **Document Export** — download the editable resume as a print-ready PDF or
   a real DOCX document.
+- **Keyword Optimizer** — compare a resume with a job description and receive
+  keyword coverage, missing terms, priority actions, and a quality scorecard.
+- **Application Tracker** — manage companies, roles, statuses, dates, notes,
+  job links, and the resume version used for each application.
 
 ## Design
 

@@ -170,6 +170,37 @@ for rewrittenBullets. Keep every "note" and bullet under 20 words.`
   }
 }
 
+export async function optimizeResumeForJob({ resumeText, jobDescription }) {
+  const prompt = `You are an ATS resume strategist. Compare the resume with the job description.
+Return only valid JSON. Never suggest inventing experience or claiming a skill the resume does not support.
+Resume:
+${resumeText.slice(0, 7000)}
+Job description:
+${jobDescription.slice(0, 3500)}
+Return exactly:
+{
+ "keywordCoverage": <integer 0-100>,
+ "presentKeywords": ["short keyword"],
+ "missingKeywords": ["short keyword"],
+ "suggestions": [{"keyword":"","placement":"","example":""}],
+ "scorecard": {"atsCompatibility": 0, "contentStrength": 0, "keywordMatch": 0, "achievementImpact": 0, "readability": 0},
+ "priorityActions": ["specific action"]
+}
+Use at most 15 keywords, 6 suggestions, and 5 priorityActions. Keep examples truthful and concise.`
+  const result = await generateContent(prompt)
+  const parsed = parseJsonResponse(result.response.text().trim())
+  const clamp = (value) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)))
+  const scorecard = parsed.scorecard || {}
+  return {
+    keywordCoverage: clamp(parsed.keywordCoverage),
+    presentKeywords: Array.isArray(parsed.presentKeywords) ? parsed.presentKeywords.slice(0, 15) : [],
+    missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords.slice(0, 15) : [],
+    suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 6) : [],
+    scorecard: Object.fromEntries(['atsCompatibility', 'contentStrength', 'keywordMatch', 'achievementImpact', 'readability'].map((key) => [key, clamp(scorecard[key])])),
+    priorityActions: Array.isArray(parsed.priorityActions) ? parsed.priorityActions.slice(0, 5) : [],
+  }
+}
+
 export async function getCommunicationQuestion(answers, context = {}) {
   const transcript = answers
     .map(({ question, answer }, index) => `${index + 1}. Q: ${question}\nA: ${answer}`)

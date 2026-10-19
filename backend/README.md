@@ -82,6 +82,14 @@ Communication interview question and assessment requests accept an optional
 `context` object with `targetRole` and `jobDescription` for role-specific
 practice and relevance scoring.
 
+### Additional authenticated features
+
+- `POST /api/optimizer` — PDF resume plus job description; returns keyword
+  coverage, present/missing keywords, placement suggestions, and a quality
+  scorecard.
+- `/api/applications` — create, list, update, and delete user-scoped job
+  application tracker records.
+
 ## Structure
 
 ```

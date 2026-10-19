@@ -11,15 +11,19 @@ import HistoryPage from './pages/HistoryPage';
 import VoicePracticePage from './pages/VoicePracticePage';
 import ResumeBuilderPage from './pages/ResumeBuilderPage';
 import AmbientCanvas from './components/AmbientCanvas';
+import OptimizerPage from './pages/OptimizerPage';
+import ApplicationTrackerPage from './pages/ApplicationTrackerPage';
 import {
   BarChart3, FileSearch, FileText, History, LogOut, Menu, Mic2, PanelLeftClose,
-  PanelLeftOpen, Sparkles, X,
+  PanelLeftOpen, Sparkles, X, Target, Briefcase,
 } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Resume analysis', icon: BarChart3, end: true },
   { path: '/ats', label: 'ATS scanner', icon: FileSearch },
+  { path: '/optimizer', label: 'Keyword optimizer', icon: Target },
   { path: '/history', label: 'Analysis history', icon: History },
+  { path: '/applications', label: 'Application tracker', icon: Briefcase },
   { path: '/voice-practice', label: 'Communication test', icon: Mic2 },
   { path: '/resume-builder', label: 'Resume builder', icon: FileText },
 ];
@@ -95,7 +99,9 @@ function AppShell() {
             <Route path="/" element={<ProtectedRoute><UploadPage isDark /></ProtectedRoute>} />
             <Route path="/results" element={<ProtectedRoute><ResultsPage isDark /></ProtectedRoute>} />
             <Route path="/ats" element={<ProtectedRoute><ATSCheckPage isDark /></ProtectedRoute>} />
+            <Route path="/optimizer" element={<ProtectedRoute><OptimizerPage isDark /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><HistoryPage isDark /></ProtectedRoute>} />
+            <Route path="/applications" element={<ProtectedRoute><ApplicationTrackerPage isDark /></ProtectedRoute>} />
             <Route path="/voice-practice" element={<ProtectedRoute><VoicePracticePage isDark /></ProtectedRoute>} />
             <Route path="/resume-builder" element={<ProtectedRoute><ResumeBuilderPage isDark /></ProtectedRoute>} />
           </Routes>

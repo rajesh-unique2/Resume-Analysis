@@ -6,6 +6,8 @@ import authRoutes from './routes/authRoutes.js'
 import analysisRoutes from './routes/analysisRoutes.js'
 import communicationRoutes from './routes/communicationRoutes.js'
 import resumeRoutes from './routes/resumeRoutes.js'
+import applicationRoutes from './routes/applicationRoutes.js'
+import optimizerRoutes from './routes/optimizerRoutes.js'
 
 const app = express()
 
@@ -40,6 +42,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/communication', communicationRoutes)
 app.use('/api/resumes', resumeRoutes)
+app.use('/api/applications', applicationRoutes)
+app.use('/api/optimizer', optimizerRoutes)
 
 // Protected - every route in here requires a valid token (see
 // routes/analysisRoutes.js, which applies requireAuth to the whole router)

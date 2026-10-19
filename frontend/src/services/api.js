@@ -171,3 +171,34 @@ export const deleteSavedResume = async (id) => {
   const response = await api.delete(`/api/resumes/${id}`);
   return response.data;
 };
+
+export const optimizeResume = async (formData) => {
+  try {
+    const response = await api.post('/api/optimizer', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Resume optimization failed. Please try again.');
+  }
+};
+
+export const getApplications = async () => {
+  const response = await api.get('/api/applications');
+  return response.data;
+};
+
+export const createApplication = async (application) => {
+  const response = await api.post('/api/applications', application);
+  return response.data;
+};
+
+export const updateApplication = async (id, application) => {
+  const response = await api.patch(`/api/applications/${id}`, application);
+  return response.data;
+};
+
+export const deleteApplication = async (id) => {
+  const response = await api.delete(`/api/applications/${id}`);
+  return response.data;
+};
