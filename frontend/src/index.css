@@ -317,8 +317,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 @media print {
-  .sidebar, .topbar, .page-canvas > :not(#resume-preview) { display: none !important; }
-  body, .app-frame, .app-main, .page-canvas { background: white !important; }
+  .sidebar, .topbar, .page-canvas > :not(.resume-builder-page),
+  .resume-builder-page > :not(#resume-preview) { display: none !important; }
+  body, .app-frame, .app-main, .page-canvas, .resume-builder-page { background: white !important; }
+  .page-canvas { padding: 0 !important; }
+  #resume-preview { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
+  #resume-preview > .resume-paper { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; }
   .resume-paper { color: var(--paper-ink) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .resume-paper, .resume-paper * { color: var(--paper-ink) !important; }
   .resume-paper .resume-contact { color: #536361 !important; }

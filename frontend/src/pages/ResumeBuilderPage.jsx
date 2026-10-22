@@ -152,7 +152,7 @@ export default function ResumeBuilderPage({ isDark }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto animate-fade-slide-up">
+    <div className="resume-builder-page max-w-7xl mx-auto animate-fade-slide-up">
       <button onClick={() => navigate('/')} className={`flex items-center gap-2 mb-6 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}><ArrowLeft className="w-4 h-4" /> Back to Analyze</button>
       <div className={`rounded-2xl shadow-xl border p-6 sm:p-8 ${panel}`}>
         <div className="flex items-start gap-4 mb-6"><div className="p-3 rounded-xl bg-purple-100 text-purple-600"><FileText className="w-6 h-6" /></div><div><h1 className={`text-2xl sm:text-3xl font-display font-bold ${heading}`}>Create My Resume</h1><p className={muted}>Build an editable, ATS-friendly resume without invented qualifications.</p></div></div>
