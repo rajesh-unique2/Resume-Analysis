@@ -84,7 +84,7 @@ function AppShell() {
         <div className="account-box">
           <div className="avatar">{initials}</div>
           <div className="account-copy"><strong>{user?.name || 'Your account'}</strong><span>{user?.email}</span></div>
-          <button className="icon-button" onClick={signOut} aria-label="Log out"><LogOut size={16} /></button>
+          <button className="icon-button logout-button" onClick={signOut} aria-label="Log out"><LogOut size={17} /></button>
         </div>
       </aside>
 
